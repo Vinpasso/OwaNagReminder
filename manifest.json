@@ -7,10 +7,12 @@
     "notifications",
     "alarms",
     "storage",
-    "scripting"
+    "scripting",
+    "windows"
   ],
   "host_permissions": [
-    "https://outlook.office.com/*"
+    "https://*.outlook.office.com/*",
+    "https://outlook.office365.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,12 +35,14 @@
   "content_scripts": [
     {
       "matches": [
-        "https://outlook.office.com/*"
+        "https://*.outlook.office.com/*",
+        "https://outlook.office365.com/*"
       ],
       "js": [
         "content.js"
       ],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "web_accessible_resources": [
@@ -47,7 +51,8 @@
         "page_hook.js"
       ],
       "matches": [
-        "https://outlook.office.com/*"
+        "https://*.outlook.office.com/*",
+        "https://outlook.office365.com/*"
       ]
     }
   ]

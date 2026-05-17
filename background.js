@@ -3,11 +3,13 @@
 console.log("[NaggyOutlook] background service worker started");
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log("[NaggyOutlook] background got message:", msg?.type);
+  console.log("[NaggyOutlook] background got message:", msg?.type, msg);
 
-  if (msg.type === "REMINDERS_FROM_OUTLOOK") {
-    console.log("[NaggyOutlook] processing REMINDERS_FROM_OUTLOOK snapshot");
-    handleRemindersSnapshot(msg.payload);
+  if (msg && msg.type === "REMINDERS_FROM_OUTLOOK") {
+    console.log("[NaggyOutlook] processing REMINDERS_FROM_OUTLOOK snapshot", msg.payload);
+    handleRemindersSnapshot(msg.payload).catch((e) => {
+      console.error("[NaggyOutlook] handleRemindersSnapshot threw:", e);
+    });
   }
   // No async sendResponse, so we don't need to return true here
 });
@@ -90,7 +92,7 @@ async function handleRemindersSnapshot(raw) {
     events: newEvents,
     lastUpdated: Date.now()
   });
-  console.log("[NaggyOutlook] events snapshot stored");
+  console.log("[NaggyOutlook] events snapshot stored, lastUpdated set to", Date.now());
 }
 
 let currentNotificationWindowId = null;
@@ -132,17 +134,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
   const url = `reminder.html?subject=${encodeURIComponent(evt.subject || "Upcoming meeting")}&startTime=${encodeURIComponent(evt.start)}`;
 
-  const win = await chrome.windows.create({
-    url: url,
-    type: "popup",
-    width: width,
-    height: height,
-    focused: true
-  });
+  try {
+    const win = await chrome.windows.create({
+      url: url,
+      type: "popup",
+      width: width,
+      height: height,
+      focused: true
+    });
 
-  if (win) {
-    currentNotificationWindowId = win.id;
+    if (win) {
+      currentNotificationWindowId = win.id;
+    }
+
+    console.log("[NaggyOutlook] popup window created for", alarm.name);
+  } catch (e) {
+    console.error("[NaggyOutlook] failed to create popup window:", e);
   }
-
-  console.log("[NaggyOutlook] popup window created for", alarm.name);
 });
